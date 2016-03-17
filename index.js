@@ -13,6 +13,7 @@ querystring = require('querystring'),
 modelling = require('modelling'),
 sailsRedis = require('sails-redis'),
 sailsDisk = require('sails-disk'),
+sailsMemory = require('sails-memory'),
 crypto = require('crypto'),
 _ = require('lodash'),
 extend = require('extend'),
@@ -48,11 +49,12 @@ var defaults = {
         },
         adapters: {
             redis: sailsRedis,
-            disk: sailsDisk
+            disk: sailsDisk,
+            memory: sailsMemory
         },
         connections: {
             def: {
-                adapter: 'disk'
+                adapter: 'memory'
             }
         },
         models: {
