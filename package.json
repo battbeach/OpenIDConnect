@@ -31,6 +31,7 @@
     "lodash": "^3.10.1",
     "modelling": "0.0.3",
     "q": "^1.4.1",
+    "sails-disk": "^0.10.9",
     "sails-redis": "^0.10.5"
   },
   "directories": {
