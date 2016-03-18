@@ -706,6 +706,7 @@ OpenIDConnect.prototype.consent = function() {
             var returl = url.parse(return_url, true);
             var redirect_uri = returl.query.redirect_uri;
             self.errorHandle(res, redirect_uri, 'access_denied', 'Resource Owner denied Access.');
+            res.redirect(redirect_uri);
         }
     }];
 };
