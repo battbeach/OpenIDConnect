@@ -315,7 +315,7 @@ OpenIDConnect.prototype.errorHandle = function(res, uri, error, desc) {
         redirect.query.error_description = desc; //'Parameter '+x+' is mandatory.';
         res.redirect(400, url.format(redirect));
     } else {
-        res.send(400).send(error+': '+desc);
+        res.sendStatus(400).send(error+': '+desc);
     }
 };
 
