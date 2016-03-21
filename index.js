@@ -1109,6 +1109,7 @@ OpenIDConnect.prototype.userInfo = function() {
                                 delete user.id;
                                 delete user.password;
                                 delete user.openidProvider;
+                                user.user_id = user.email.replace(/@.*$/,"");
                                 res.json(user);
                             //} else {
                                 //res.json({email: user.email});
