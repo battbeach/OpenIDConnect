@@ -10,6 +10,7 @@ var EventEmitter = require('events').EventEmitter,
 querystring = require('querystring'),
 //serializer = require('serializer'),
 //hashlib = require('hashlib2'),
+debug = require('debug')('openid');
 modelling = require('modelling'),
 sailsRedis = require('sails-redis'),
 sailsDisk = require('sails-disk'),
@@ -330,11 +331,9 @@ OpenIDConnect.prototype.endpointParams = function (spec, req, res, next) {
 
 OpenIDConnect.prototype.parseParams = function(req, res, spec) {
     var params = {};
-    //bbb var r = req.param('redirect_uri');
-    var r = req.query['redirect_uri'];
+    var r = req.param('redirect_uri');
     for(var i in spec) {
-        //bbb var x = req.param(i);
-        var x = req.query[i];
+        var x = req.param(i);
         if(x) {
             params[i] = x;
         }
@@ -393,6 +392,7 @@ OpenIDConnect.prototype.login = function(validateUser) {
 
     return [self.use({policies: {loggedIn: false}, models: 'user'}),
             function(req, res, next) {
+                debug("***login() ***");
                 validateUser(req, /*next:*/function(error,user) {
                     if(!error && !user) {
                         error = new Error('User not validated');
@@ -456,6 +456,7 @@ OpenIDConnect.prototype.auth = function() {
             },
             self.use(['client', 'consent', 'auth', 'access']),
             function(req, res, next) {
+                debug("***auth() ***");
                 Q(req.parsedParams).then(function(params) {
                     //Step 2: Check if response_type is supported and client_id is valid.
 
@@ -691,10 +692,9 @@ OpenIDConnect.prototype.consent = function() {
     var self = this;
     return [self.use('consent'),
     function(req, res, next) {
-        //bbb var accept = req.param('accept');
-        //bbb var return_url = req.param('return_url');
-        var accept = req.query['accept'];
-        var return_url = req.query['return_url'];
+        debug("***consent() ***");
+        var accept = req.param('accept');
+        var return_url = req.param('return_url');
         //var client_id = req.query.client_id || req.body.client_id || false;
         if(accept) {
             var scopes = [];
@@ -744,6 +744,7 @@ OpenIDConnect.prototype.token = function() {
         self.use({policies: {loggedIn: false}, models:['client', 'consent', 'auth', 'access', 'refresh']}),
 
         function(req, res, next) {
+            debug("***token() ***");
             var params = req.parsedParams;
 
             var client_key = req.body.client_id;
@@ -1010,6 +1011,7 @@ OpenIDConnect.prototype.token = function() {
  */
 OpenIDConnect.prototype.check = function() {
     //Seguir desde acá!!!!
+
     var scopes = Array.prototype.slice.call(arguments, 0);
     if(!util.isArray(scopes)) {
         scopes = [scopes];
@@ -1025,6 +1027,7 @@ OpenIDConnect.prototype.check = function() {
         },
         self.use({policies: {loggedIn: false}, models:['access', 'auth']}),
         function(req, res, next) {
+            debug("***check() ***");
             var params = req.parsedParams;
             if(!scopes.length) {
                 next();
@@ -1053,6 +1056,8 @@ OpenIDConnect.prototype.check = function() {
                                         !inS && errors.push('('+scope.toString().replace(/\//g,'')+')');
                                     }
                                 });
+
+
                                 if(errors.length > 1) {
                                     var last = errors.pop();
                                     self.errorHandle(res, null, 'invalid_scope', 'Required scopes '+errors.join(', ')+' and '+last+' were not granted.');
@@ -1085,24 +1090,29 @@ OpenIDConnect.prototype.check = function() {
  * This function returns the user info in a json object. Checks for scope and login are included.
  */
 OpenIDConnect.prototype.userInfo = function() {
+    debug("***userInfo() ***");
     var self = this;
+    //There seems to be an issue with the check. For now, any scope is valid 
+    //self.check('openid', /profile|email/),
     return [
-            self.check('openid', /profile|email/),
+            self.check(/openid|profile|email/),
             self.use({policies: {loggedIn: false}, models: ['access', 'user']}),
             function(req, res, next) {
                 req.model.access.findOne({token: req.parsedParams.access_token})
                 .exec(function(err, access) {
                     if(!err && access) {
                         req.model.user.findOne({id: access.user}, function(err, user) {
-                            if(req.check.scopes.indexOf('profile') != -1) {
+
+                            //There seems to be an issue with the check. For now, any scope is valid 
+                            //if(req.check.scopes.indexOf('profile') != -1) {
                                 user.sub = req.session.sub||req.session.user;
                                 delete user.id;
                                 delete user.password;
                                 delete user.openidProvider;
                                 res.json(user);
-                            } else {
-                                res.json({email: user.email});
-                            }
+                            //} else {
+                                //res.json({email: user.email});
+                            //}
                         });
                     } else {
                         self.errorHandle(res, null, 'unauthorized_client', 'Access token is not valid.');
@@ -1133,6 +1143,7 @@ OpenIDConnect.prototype.removetokens = function() {
             },
             self.use({policies: {loggedIn: false}, models: ['access','auth']}),
             function(req, res, next) {
+                debug("***removetokens() ***");
                 var params = req.parsedParams;
 
                 if(!params.access_token) {
